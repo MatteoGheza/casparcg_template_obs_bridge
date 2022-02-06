@@ -1,11 +1,19 @@
 import { io } from "socket.io-client";
 
 var socket = io("http://127.0.0.1:5000");
-socket.on('connect', function () {
-    socket.emit('template_connect', {
+socket.on('connect', () => {
+    let data = {
         templateName: window.templateName ? window.templateName : location.pathname.substring(location.pathname.lastIndexOf('/') + 1),
         href: location.href
-    });
+    };
+    if(typeof localStorage.getItem('template_id') === "string") {
+        data.id = localStorage.getItem('template_id');
+    }
+    socket.emit('template_connect', data);
+});
+
+socket.on('new_template_id', (new_id) => {
+    localStorage.setItem('template_id', new_id);
 });
 
 socket.on('play', () => {
@@ -29,8 +37,9 @@ socket.on('stop', () => {
 });
 
 socket.on('update', (data) => {
+    console.log("received update", data);
     if (typeof (update) === "function") {
-        update(data);
+        update(JSON.stringify(data));
     } else {
         socket.emit('error', 'update function not found');
     }
