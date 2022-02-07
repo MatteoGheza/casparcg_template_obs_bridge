@@ -1,5 +1,7 @@
 import { io } from "socket.io-client";
 
+window.casparcg = {};
+
 var socket = io("http://127.0.0.1:5000");
 socket.on('connect', () => {
     let data = {
@@ -36,4 +38,8 @@ socket.on('update', (data) => {
     } else {
         socket.emit('error', 'update function not found');
     }
+});
+
+socket.on('reload', () => {
+    window.location.reload();
 });

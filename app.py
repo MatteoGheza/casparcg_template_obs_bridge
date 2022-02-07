@@ -55,6 +55,10 @@ def handle_template_stop(sid):
 def handle_template_update(sid, data):
     emit("update", data, to=sid, namespace="/")
 
+@socketio.on("template_reload")
+def handle_template_reload(sid):
+    emit("reload", to=sid, namespace="/")
+
 @socketio.on("template_delete")
 def handle_template_delete(sid):
     request.sid = sid

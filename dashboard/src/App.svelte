@@ -1,6 +1,9 @@
 <script>
-import { Styles } from 'sveltestrap';
+import { Styles, Form, FormGroup, FormText, Input, Label } from 'sveltestrap';
 import { socket, waitSocketConnection } from './store';
+
+let innerWidth;
+let reloadAfterStop = true;
 
 let clients = [];
 socket.on('clients', (new_clients) => {
@@ -18,12 +21,27 @@ function play(sid) {
 
 function stop(sid) {
     socket.emit('template_stop', sid);
+    if(reloadAfterStop) {
+        setTimeout(() => {
+            socket.emit('template_reload', sid);
+        }, 5000);
+    }
 }
 
 function update(sid, data) {
     socket.emit('template_update', sid, data);
 }
 </script>
+
+<style>
+@media only screen and (max-width: 500px) {
+    .sid-column {
+        display: none;
+    }
+}
+</style>
+
+<svelte:window bind:innerWidth={innerWidth} />
 
 <Styles />
 
@@ -47,6 +65,13 @@ function update(sid, data) {
 
     <div class="album py-5 bg-light">
         <div class="container">
+            <Form>
+                <FormGroup>
+                    <Input checked type="switch" label="Reload template page after stop" bind:value={reloadAfterStop} />
+                </FormGroup>
+            </Form>
+
+            {#if innerWidth >= 630}
             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
                 {#each Object.entries(clients) as [sid, client]}
                 <div class="col">
@@ -65,6 +90,24 @@ function update(sid, data) {
                 </div>
                 {/each}
             </div>
+            {:else}
+            <table class="table">
+                <tbody>
+                    {#each Object.entries(clients) as [sid, client]}
+                    <tr>
+                        <td><b>{client.templateName}</b></td>
+                        <td class="sid-column">{sid}</td>
+                        <td>
+                            <div class="btn-group">
+                                <button on:click={() => { play(sid); }} type="button" class="btn btn-lg btn-outline-success">Play</button>
+                                <button on:click={() => { stop(sid); }} type="button" class="btn btn-lg btn-outline-danger">Stop</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {/each}
+                </tbody>
+            </table>
+            {/if}
         </div>
     </div>
 
