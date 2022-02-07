@@ -6,14 +6,7 @@ socket.on('connect', () => {
         templateName: window.templateName ? window.templateName : location.pathname.substring(location.pathname.lastIndexOf('/') + 1),
         href: location.href
     };
-    if(typeof localStorage.getItem('template_id') === "string") {
-        data.id = localStorage.getItem('template_id');
-    }
     socket.emit('template_connect', data);
-});
-
-socket.on('new_template_id', (new_id) => {
-    localStorage.setItem('template_id', new_id);
 });
 
 socket.on('play', () => {

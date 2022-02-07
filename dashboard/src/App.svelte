@@ -1,14 +1,30 @@
 <script>
 import { Styles } from 'sveltestrap';
+import { socket, waitSocketConnection } from './store';
 
-//export let name;
+let clients = [];
+socket.on('clients', (new_clients) => {
+    clients = new_clients;
+    console.log("clients", clients);
+});
+
+waitSocketConnection.then(() => {
+    socket.emit('request_clients');
+});
+
+function play(sid) {
+    socket.emit('template_play', sid);
+}
+
+function stop(sid) {
+    socket.emit('template_stop', sid);
+}
+
+function update(sid, data) {
+    socket.emit('template_update', sid, data);
+}
 </script>
 
-<style>
-:global(body) {
-	padding: 0;
-}
-</style>
 <Styles />
 
 <header>
@@ -32,27 +48,22 @@ import { Styles } from 'sveltestrap';
     <div class="album py-5 bg-light">
         <div class="container">
             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
-                
+                {#each Object.entries(clients) as [sid, client]}
                 <div class="col">
                     <div class="card shadow-sm">
                         <div class="card-body">
-                            <h5 class="card-title">key</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">values.templateName</h6>
-                            <p class="card-text">This is a wider card with supporting text below as a natural
-                                lead-in to additional content. This content is a little bit longer.</p>
+                            <h5 class="card-title">{sid}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">{client.templateName}</h6>
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="btn-group">
-                                    <button type="button" class="btn btn-lg btn-outline-success">Play</button>
-                                    <button type="button" class="btn btn-lg btn-outline-danger">Stop</button>
-                                </div>
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-sm btn-outline-danger">Disconnect</button>
+                                    <button on:click={() => { play(sid); }} type="button" class="btn btn-lg btn-outline-success">Play</button>
+                                    <button on:click={() => { stop(sid); }} type="button" class="btn btn-lg btn-outline-danger">Stop</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
+                {/each}
             </div>
         </div>
     </div>

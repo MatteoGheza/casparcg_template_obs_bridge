@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, render_template
+from flask import Flask, request, send_from_directory
 from flask_socketio import SocketIO, rooms, disconnect, emit
 from nanoid import generate
 
@@ -9,29 +9,60 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 socket_clients = dict()
 
+# SOCKETIO EVENTS
 @socketio.on('template_connect')
 def handle_template_connect(data):
     print('Template connected: ' + str(data["templateName"]))
-    if not "id" in data:
-        template_id = generate()
-        emit('new_template_id', template_id, namespace="/")
-    else:
-        template_id = data["id"]
-        del data["id"]
-    data["sid"] = request.sid
-    socket_clients[template_id] = data
-
-getSIDByTemplateID = lambda template_id: socket_clients[template_id]["sid"]
-getTemplateIDBySID = lambda sid: next(filter(lambda template_id: socket_clients[template_id]["sid"] == sid, socket_clients.keys()))
+    socket_clients[request.sid] = data
+    emit('clients', socket_clients, broadcast=True)
 
 @socketio.on('disconnect')
 def disconnect():
-    del socket_clients[getTemplateIDBySID(request.sid)]
+    if request.sid in socket_clients:
+        del socket_clients[request.sid]
+    print('Template disconnected: ' + str(request.sid))
+    emit('clients', socket_clients, broadcast=True)
+
+@socketio.on('request_clients')
+def handle_connections():
+    emit('clients', socket_clients)
 
 @socketio.on('error')
 def handle_error(data):
     print('received error: ' + data)
 
+@socketio.on("template_play_all")
+def handle_template_play_all():
+    emit('play', broadcast=True, namespace="/")
+
+@socketio.on("template_stop_all")
+def handle_template_stop_all():
+    emit('stop', broadcast=True, namespace="/")
+
+@socketio.on("template_update_all")
+def handle_template_update_all(data):
+    emit('update', data, broadcast=True, namespace="/")
+
+@socketio.on("template_play")
+def handle_template_play(sid):
+    emit("play", to=sid, namespace="/")
+
+@socketio.on("template_stop")
+def handle_template_stop(sid):
+    emit("stop", to=sid, namespace="/")
+
+@socketio.on("template_update")
+def handle_template_update(sid, data):
+    emit("update", data, to=sid, namespace="/")
+
+@socketio.on("template_delete")
+def handle_template_delete(sid):
+    request.sid = sid
+    request.namespace = "/"
+    disconnect()
+
+
+# REST API
 @app.route("/play_all", methods=['GET', 'POST'])
 def route_play_all():
     emit('play', broadcast=True, namespace="/")
@@ -47,32 +78,35 @@ def route_update_all():
     emit('update', request.form, broadcast=True, namespace="/")
     return "ok"
 
-@app.route("/<template_id>/play", methods=['POST'])
-def route_connection_play(template_id):
-    emit("play", to=getSIDByTemplateID(template_id), namespace="/")
+@app.route("/<sid>/play", methods=['POST'])
+def route_connection_play(sid):
+    emit("play", to=sid, namespace="/")
     return "ok"
 
-@app.route("/<template_id>/stop", methods=['POST'])
-def route_connection_stop(template_id):
-    emit("stop", to=getSIDByTemplateID(template_id), namespace="/")
+@app.route("/<sid>/stop", methods=['POST'])
+def route_connection_stop(sid):
+    emit("stop", to=sid, namespace="/")
     return "ok"
 
-@app.route("/<template_id>/update", methods=['POST'])
-def route_connection_update(template_id):
-    emit("update", request.form, to=template_id, namespace="/")
+@app.route("/<sid>/update", methods=['POST'])
+def route_connection_update(sid):
+    emit("update", request.form, to=sid, namespace="/")
     return "ok"
 
-@app.route("/<template_id>/delete", methods=['POST'])
-def route_connection_delete(template_id):
-    request.sid = getSIDByTemplateID(template_id)
+@app.route("/<sid>/delete", methods=['POST'])
+def route_connection_delete(sid):
+    request.sid = sid
     request.namespace = "/"
     disconnect()
     return "ok"
 
 @app.route("/")
-def route_index():
-    print(socket_clients)
-    return render_template("index.html", socket_clients=socket_clients)
+def base():
+    return send_from_directory('dashboard/public', 'index.html')
+
+@app.route("/<path:path>")
+def home(path):
+    return send_from_directory('dashboard/public', path)
 
 if __name__ == '__main__':
     socketio.run(app)
