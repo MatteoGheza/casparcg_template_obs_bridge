@@ -1,6 +1,8 @@
 from flask import Flask, request, send_from_directory
 from flask_socketio import SocketIO, rooms, disconnect, emit
-from nanoid import generate
+from os import path
+from pathlib import Path
+import json
 
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -8,6 +10,16 @@ app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 socket_clients = dict()
+update_sets = dict()
+
+config_path = path.join(Path.home(), ".casparcg_template_obs_bridge.json")
+
+if path.exists(config_path):
+    try:
+        with open(config_path) as f:
+            update_sets = json.load(f)
+    except:
+        update_sets = dict()
 
 # SOCKETIO EVENTS
 @socketio.on('template_connect')
@@ -65,6 +77,18 @@ def handle_template_delete(sid):
     request.namespace = "/"
     disconnect()
 
+@socketio.on("request_update_sets")
+def handle_request_update_sets():
+    emit("update_sets", update_sets, broadcast=True, namespace="/")
+
+@socketio.on("add_update_set")
+def handle_add_update_set(name, data):
+    print(name, data)
+    update_sets[name] = data
+    emit("update_sets", update_sets, broadcast=True, namespace="/")
+
+    with open(config_path, "w") as f:
+        json.dump(update_sets, f)
 
 # REST API
 @app.route("/play_all", methods=['GET', 'POST'])
