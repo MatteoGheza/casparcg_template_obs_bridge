@@ -32,7 +32,10 @@ async function handleSave() {
             {/each}
         </FormGroup>
         <FormGroup>
-            <button on:click|preventDefault={handleAdd} type="button" class="btn btn-outline-primary">Add</button> <button on:click|preventDefault={handleSave} type="button" class="btn btn-outline-success">Save</button>
+            <div class="text-end">
+                <button on:click|preventDefault={handleAdd} type="button" class="btn btn-outline-primary me-1">Add row</button>
+                <button on:click|preventDefault={handleSave} type="button" class="btn btn-outline-success">Save set</button>
+            </div>
         </FormGroup>
     </Form>
 </div>

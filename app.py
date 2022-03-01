@@ -90,6 +90,15 @@ def handle_add_update_set(name, data):
     with open(config_path, "w") as f:
         json.dump(update_sets, f)
 
+@socketio.on("remove_update_set")
+def handle_remove_update_set(name):
+    print(name)
+    del update_sets[name]
+    emit("update_sets", update_sets, broadcast=True, namespace="/")
+
+    with open(config_path, "w") as f:
+        json.dump(update_sets, f)
+
 # REST API
 @app.route("/play_all", methods=['GET', 'POST'])
 def route_play_all():
@@ -130,10 +139,14 @@ def route_connection_delete(sid):
 
 @app.route("/")
 def base():
-    return send_from_directory('dashboard/public', 'index.html')
+    return send_from_directory(path.join('dashboard', 'public'), 'index.html')
+
+@app.route("/inject.js")
+def serve_inject():
+    return send_from_directory(path.join('js_client_injected', 'dist'), 'main.js')
 
 @app.route("/<path:path>")
-def home(path):
+def static_resources(path):
     return send_from_directory('dashboard/public', path)
 
 if __name__ == '__main__':

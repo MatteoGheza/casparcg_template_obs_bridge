@@ -1,5 +1,6 @@
 <script>
 import { Styles, Form, FormGroup, InputGroup, Input } from 'sveltestrap';
+import TrashCan from "svelte-material-icons/TrashCan.svelte";
 import { fade } from 'svelte/transition';
 import { socket, waitSocketConnection } from './store';
 import UpdateDataEditor from './components/UpdateDataEditor.svelte';
@@ -71,6 +72,10 @@ function handleUpdateEditorSubmit(event) {
 
     console.log("handleUpdateEditorSubmit", name, data);
     socket.emit('add_update_set', name, data);
+}
+
+function remove_update_set(name) {
+    socket.emit('remove_update_set', name);
 }
 </script>
 
@@ -170,4 +175,42 @@ function handleUpdateEditorSubmit(event) {
         </div>
     </div>
 
+    {#if innerWidth >= 630}
+    <div class="container mt-2">
+        <h4>Update sets:</h4>
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <td>Name</td>
+                    <td>Data</td>
+                    <td>Remove</td>
+                </tr>
+            </thead>
+            <tbody>
+                {#each Object.entries(update_sets) as [name, data]}
+                <tr>
+                    <td>{name}</td>
+                    <td>
+                        <table class="table mt-2">
+                            <tbody>
+                                {#each data as {key,value}}
+                                <tr>
+                                    <td><b>{key}</b></td>
+                                    <td>{value}</td>
+                                </tr>
+                                {/each}
+                            </tbody>
+                        </table>
+                    </td>
+                    <td>
+                        <button on:click={() => { remove_update_set(name); }} type="button" class="btn btn-md btn-outline-success">
+                            <TrashCan size="1.5em" />
+                        </button>
+                    </td>
+                </tr>
+                {/each}
+            </tbody>
+        </table>
+    </div>
+    {/if}
 </main>
