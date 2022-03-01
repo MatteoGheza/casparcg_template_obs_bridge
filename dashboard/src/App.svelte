@@ -29,6 +29,8 @@ waitSocketConnection.then(() => {
 
 function play(sid) {
     socket.emit('template_play', sid);
+
+    blinkClientPlay = [...blinkClientPlay, sid];
 }
 
 function stop(sid) {
@@ -39,6 +41,8 @@ function stop(sid) {
             socket.emit('template_reload', sid);
         }, 3000);
     }
+
+    blinkClientPlay = blinkClientPlay.filter(l => l !== sid);
 }
 
 function update(sid) {
@@ -48,6 +52,9 @@ function update(sid) {
 
     console.log("update", sid, obj);
     socket.emit('template_update', sid, obj);
+    socket.emit('template_update_set_changed', sid, selectedUpdateSets[sid]);
+
+    blinkClientUpdate = blinkClientUpdate.filter(l => l !== sid);
 }
 
 let selectedUpdateSets = {};
@@ -77,6 +84,9 @@ function handleUpdateEditorSubmit(event) {
 function remove_update_set(name) {
     socket.emit('remove_update_set', name);
 }
+
+let blinkClientUpdate = [];
+let blinkClientPlay = [];
 </script>
 
 <style>
@@ -84,6 +94,16 @@ function remove_update_set(name) {
     .sid-column {
         display: none;
     }
+}
+
+.blink {
+  animation: blinker 1.5s linear infinite;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
 }
 </style>
 
@@ -127,7 +147,7 @@ function remove_update_set(name) {
                             <h6 class="card-subtitle mb-2 text-muted">{client.templateName}</h6>
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <InputGroup>
-                                    <Input type="select" bind:value={selectedUpdateSets[sid]}>
+                                    <Input type="select" bind:value={selectedUpdateSets[sid]} on:change={() => { blinkClientUpdate = [...blinkClientUpdate, sid]; }}>
                                         <option selected disabled></option>
                                         {#each Object.entries(update_sets) as [name, data]}
                                         <option>{name}</option>
@@ -138,8 +158,8 @@ function remove_update_set(name) {
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="btn-group">
-                                    <button on:click={() => { update(sid); }} type="button" class="btn btn-md btn-outline-primary">Update</button>
-                                    <button on:click={() => { play(sid); }} type="button" class="btn btn-lg btn-outline-success">Play</button>
+                                    <button on:click={() => { update(sid); }} class:blink="{blinkClientUpdate.includes(sid)}" type="button" class="btn btn-md btn-outline-primary">Update</button>
+                                    <button on:click={() => { play(sid); }} class:blink="{blinkClientPlay.includes(sid)}" type="button" class="btn btn-lg btn-outline-success">Play</button>
                                     <button on:click={() => { stop(sid); }} type="button" class="btn btn-lg btn-outline-danger">Stop</button>
                                 </div>
                             </div>
@@ -157,7 +177,7 @@ function remove_update_set(name) {
                         <td class="sid-column">{sid}</td>
                         <td>
                             <div class="btn-group">
-                                <button on:click={() => { play(sid); }} type="button" class="btn btn-md btn-outline-success">Play</button>
+                                <button on:click={() => { play(sid); }} class:blink="{blinkClientPlay.includes(sid)}" type="button" class="btn btn-md btn-outline-success">Play</button>
                                 <button on:click={() => { stop(sid); }} type="button" class="btn btn-md btn-outline-danger">Stop</button>
                             </div>
                         </td>
