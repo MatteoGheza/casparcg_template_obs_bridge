@@ -196,7 +196,7 @@ let blinkClientPlay = [];
     </div>
 
     {#if innerWidth >= 630}
-    <div class="container mt-2">
+    <div class="container mt-2 mb-2">
         <h4>Update sets:</h4>
         <table class="table table-striped table-hover">
             <thead>
