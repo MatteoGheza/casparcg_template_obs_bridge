@@ -40,7 +40,7 @@ jobs:
         npm ci
         npm run build
     - name: Build server
-      run: pyinstaller app.py --add-data "dashboard"
+      run: pyinstaller app.py --add-data "dashboard;dashboard"
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.0.0
       with:
